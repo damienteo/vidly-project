@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
 import { getMovies } from '../services/fakeMovieService';
 import { getGenres } from '../services/fakeGenreService';
 import MoviesTable from './moviesTable'
@@ -50,11 +51,7 @@ class Movies extends Component {
 		this.setState({ sortColumn }); 
 	};
 
-	// <h1>{this.state.movies[1].title}</h1>
-
-	render() {
-
-		const { length: count } = this.state.movies;
+	getPagedData = () => {
 
 		const { 
 			pageSize, 
@@ -64,9 +61,33 @@ class Movies extends Component {
 			sortColumn 
 		} = this.state;
 
+		const filtered = (selectedGenre && selectedGenre._id) ? allMovies.filter(m => m.genre._id === selectedGenre._id) : allMovies;
+
+		const sorted = _.orderBy(filtered, [sortColumn.path], [sortColumn.order]);
+
+		const movies = paginate (sorted, currentPage, pageSize);
+
+		return { totalCount: filtered.length, data: movies }
+
+		}
+
+	// <h1>{this.state.movies[1].title}</h1>
+
+	render() {
+
+		const { length: count } = this.state.movies;
+ 
+		const { 
+			pageSize, 
+			currentPage, 
+			// selectedGenre, 
+			// movies:allMovies,
+			sortColumn 
+		} = this.state;
+
 		if (count === 0) return <p>There are no movies in the database.</p>
 	
-		const filtered = (selectedGenre && selectedGenre._id) ? allMovies.filter(m => m.genre._id === selectedGenre._id) : allMovies;
+		// const filtered = (selectedGenre && selectedGenre._id) ? allMovies.filter(m => m.genre._id === selectedGenre._id) : allMovies;
 
 		// const sorted = filtered.sort (
 		// 	(a, b, path) => {
@@ -77,9 +98,11 @@ class Movies extends Component {
 		// 	);
 		// console.log(sorted);
 
-		const sorted = _.orderBy(filtered, [sortColumn.path], [sortColumn.order]);
+		// const sorted = _.orderBy(filtered, [sortColumn.path], [sortColumn.order]);
 
-		const movies = paginate (sorted, currentPage, pageSize);
+		// const movies = paginate (sorted, currentPage, pageSize);
+
+		const {totalCount, data: movies} = this.getPagedData();
 
 		return(
 			<div className="row">
@@ -90,8 +113,12 @@ class Movies extends Component {
 					onItemSelect={this.handleGenreSelect}
 					/>
 				</div>
+				
 				<div className="col-2">
-					<p>Showing {filtered.length} movies in the database.</p>
+					<p>Showing {totalCount} movies in the database.</p>
+					<Link to="/movies/new" className="btn btn-primary" style={{ marginBottom:20 }}>
+						New Movie
+					</Link>
 					<MoviesTable 
 						movies = {movies} 
 						sortColumn={sortColumn}
@@ -100,7 +127,7 @@ class Movies extends Component {
 						onSort = {this.handleSort}
 					/>
 					<Pagination
-						itemsCount = {filtered.length} 
+						itemsCount = {totalCount} 
 						pageSize={pageSize}
 						currentPage={currentPage}
 						onPageChange={this.handlePageChange}
